@@ -1,21 +1,32 @@
 package com.tomato.app;
 
-import com.formdev.flatlaf.FlatLightLaf;
+import com.tomato.controller.PomodoroController;
+import com.tomato.model.PomodoroModel;
+import com.tomato.view.PomodoroView;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+public final class TomatoApp extends Application {
 
-public final class TomatoApp {
+    @Override
+    public void start(Stage stage) {
+        stage.setTitle("番茄钟");
+
+        var model = new PomodoroModel();
+        var view = new PomodoroView(model);
+        new PomodoroController(stage, model, view);
+
+        var scene = new Scene(view.getRoot(), 340, 400);
+        stage.setScene(scene);
+        stage.setResizable(true);
+        stage.setMinWidth(320);
+        stage.setMinHeight(360);
+        stage.centerOnScreen();
+        stage.show();
+    }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(new FlatLightLaf());
-            } catch (Exception e) {
-                // 回退系统 L&F
-            }
-            var frame = new MainFrame();
-            frame.setVisible(true);
-        });
+        launch(args);
     }
 }
