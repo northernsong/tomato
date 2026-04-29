@@ -6,11 +6,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 
 /** 工具栏与主按钮的矢量图标绘制（Canvas）。 */
-final class PomodoroGraphics {
+public final class PomodoroGraphics {
 
     private PomodoroGraphics() {}
 
-    static Canvas closeIcon(int size, Color fg) {
+    public static Canvas closeIcon(int size, Color fg) {
         int s = size + 10;
         Canvas c = new Canvas(s, s);
         GraphicsContext g = c.getGraphicsContext2D();
@@ -25,7 +25,7 @@ final class PomodoroGraphics {
         return c;
     }
 
-    static Canvas resetIcon(int size, Color fg) {
+    public static Canvas resetIcon(int size, Color fg) {
         Canvas c = new Canvas(size, size);
         GraphicsContext g = c.getGraphicsContext2D();
         double cx = size / 2.0;
@@ -42,7 +42,7 @@ final class PomodoroGraphics {
         return c;
     }
 
-    static Canvas statsIcon(int size, Color fg) {
+    public static Canvas statsIcon(int size, Color fg) {
         Canvas c = new Canvas(size, size);
         GraphicsContext g = c.getGraphicsContext2D();
         g.setStroke(fg);
@@ -55,7 +55,7 @@ final class PomodoroGraphics {
         return c;
     }
 
-    static Canvas moreIcon(int size, Color fg) {
+    public static Canvas moreIcon(int size, Color fg) {
         Canvas c = new Canvas(size, size);
         GraphicsContext g = c.getGraphicsContext2D();
         g.setFill(fg);
@@ -68,21 +68,22 @@ final class PomodoroGraphics {
         return c;
     }
 
-    static Canvas roundPlayPause(int size, Color stroke, boolean pause) {
+    public static Canvas roundPlayPause(int size, Color stroke, boolean pause) {
         Canvas c = new Canvas(size, size);
         GraphicsContext g = c.getGraphicsContext2D();
-        g.setFill(AppTheme.CARD_WHITE);
+        g.setFill(AppTheme.MAIN_BUTTON_FILL);
         g.fillOval(0, 0, size, size);
         g.setStroke(stroke);
-        g.setLineWidth(2.2);
+        g.setLineWidth(2.6);
         g.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
-        g.strokeOval(1.5, 1.5, size - 3, size - 3);
+        g.strokeOval(2, 2, size - 4, size - 4);
 
         double cx = size / 2.0;
         double cy = size / 2.0;
         g.setLineWidth(3);
         if (pause) {
             double h = 18;
+            g.setStroke(stroke);
             g.strokeLine(cx - 5, cy - h / 2, cx - 5, cy + h / 2);
             g.strokeLine(cx + 5, cy - h / 2, cx + 5, cy + h / 2);
         } else {

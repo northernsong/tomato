@@ -9,77 +9,103 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
 
-/** 一条圆角「当前段」+ 若干空心圆，进度映射到首段宽度。 */
-final class SessionStripPane extends Region {
+/** 四枚圆角胶囊：首段映射当前计时进度，其余为未激活态。 */
+public final class SessionStripPane extends Region {
+
+    private static final int SEGMENTS = PomodoroModel.SESSION_TOTAL;
 
     private final Canvas canvas = new Canvas();
     private final DoubleProperty progress = new SimpleDoubleProperty(0);
     private final ObjectProperty<PomodoroState> state = new SimpleObjectProperty<>(PomodoroState.IDLE);
 
-    SessionStripPane() {
+    public SessionStripPane() {
         getChildren().add(canvas);
-        prefWidthProperty().set(200);
-        prefHeightProperty().set(28);
-        minHeightProperty().set(28);
+        setPrefSize(220, 22);
+        setMinSize(80, 18);
         progress.addListener((o, a, b) -> requestLayout());
         state.addListener((o, a, b) -> requestLayout());
         widthProperty().addListener((o, a, b) -> draw());
         heightProperty().addListener((o, a, b) -> draw());
     }
 
-    DoubleProperty progressProperty() {
+    public DoubleProperty progressProperty() {
         return progress;
     }
 
-    ObjectProperty<PomodoroState> stateProperty() {
+    public ObjectProperty<PomodoroState> stateProperty() {
         return state;
     }
 
     @Override
     protected void layoutChildren() {
         super.layoutChildren();
-        double w = getWidth();
-        double h = getHeight();
-        canvas.setWidth(w);
-        canvas.setHeight(h);
+        canvas.setWidth(getWidth());
+        canvas.setHeight(getHeight());
         draw();
     }
 
     private void draw() {
         GraphicsContext g = canvas.getGraphicsContext2D();
         g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        g.setLineWidth(1.5);
 
         double w = canvas.getWidth();
         double h = canvas.getHeight();
-        double barH = 8;
-        double barY = (h - barH) / 2;
-        double barMaxW = w * 0.42;
-        double barX = 0;
-        double p = Math.max(0, Math.min(1, progress.get()));
-        double filledW = Math.round(barMaxW * p);
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+
+        double gap = Math.min(10, w * 0.04);
+        double pillW = (w - gap * (SEGMENTS - 1)) / SEGMENTS;
+        double pillH = Math.min(9, h * 0.38);
+        double pillY = (h - pillH) / 2;
+        double arc = pillH / 2;
+
         PomodoroState st = state.get();
-        if (st == PomodoroState.RUNNING || st == PomodoroState.PAUSED) {
-            filledW = Math.max(6, filledW);
+        double p = Math.max(0, Math.min(1, progress.get()));
+
+        double x = 0;
+        for (int i = 0; i < SEGMENTS; i++) {
+            if (i == 0) {
+                drawFirstSegment(g, x, pillY, pillW, pillH, arc, st, p);
+            } else {
+                g.setFill(AppTheme.PILL_INACTIVE);
+                g.fillRoundRect(x, pillY, pillW, pillH, arc, arc);
+            }
+            x += pillW + gap;
+        }
+    }
+
+    private static void drawFirstSegment(
+            GraphicsContext g,
+            double x,
+            double pillY,
+            double pillW,
+            double pillH,
+            double arc,
+            PomodoroState st,
+            double p) {
+        g.setFill(AppTheme.PILL_INACTIVE);
+        g.fillRoundRect(x, pillY, pillW, pillH, arc, arc);
+
+        double filled;
+        if (st == PomodoroState.ENDED) {
+            filled = pillW;
+        } else if (st == PomodoroState.IDLE || st == PomodoroState.ABORTED) {
+            filled = 0;
+        } else {
+            filled = pillW * p;
+            if (st == PomodoroState.RUNNING || st == PomodoroState.PAUSED) {
+                filled = Math.max(pillH * 0.55, filled);
+            }
         }
 
-        g.setFill(AppTheme.MINT);
-        g.fillRoundRect(barX, barY, filledW, barH, barH, barH);
-
-        g.setStroke(AppTheme.MINT);
-        g.strokeRoundRect(barX, barY, barMaxW, barH, barH, barH);
-
-        double dotR = 7;
-        double gap = 10;
-        double cx = barX + barMaxW + gap + dotR;
-
-        for (int i = 1; i < PomodoroModel.SESSION_TOTAL; i++) {
-            g.setFill(Color.TRANSPARENT);
-            g.setStroke(AppTheme.MINT);
-            g.strokeOval(cx - dotR, h / 2 - dotR, dotR * 2, dotR * 2);
-            cx += dotR * 2 + gap;
+        if (filled <= 0) {
+            return;
         }
+
+        double drawW = Math.min(filled, pillW);
+        g.setFill(AppTheme.ACCENT_TEAL);
+        g.fillRoundRect(x, pillY, drawW, pillH, arc, arc);
     }
 }

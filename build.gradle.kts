@@ -17,7 +17,7 @@ repositories {
     mavenCentral()
 }
 
-val javafxModules = listOf("javafx.controls", "javafx.graphics")
+val javafxModules = listOf("javafx.controls", "javafx.graphics", "javafx.fxml")
 
 javafx {
     version = "21.0.5"

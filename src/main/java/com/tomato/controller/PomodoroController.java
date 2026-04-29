@@ -1,7 +1,6 @@
 package com.tomato.controller;
 
 import com.tomato.model.PomodoroModel;
-import com.tomato.view.PomodoroView;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -17,12 +16,12 @@ public final class PomodoroController {
 
     private final Stage stage;
     private final PomodoroModel model;
-    private final PomodoroView view;
+    private final PomodoroFxController ui;
 
-    public PomodoroController(Stage stage, PomodoroModel model, PomodoroView view) {
+    public PomodoroController(Stage stage, PomodoroModel model, PomodoroFxController ui) {
         this.stage = stage;
         this.model = model;
-        this.view = view;
+        this.ui = ui;
         wire();
     }
 
@@ -49,13 +48,13 @@ public final class PomodoroController {
                             a.showAndWait();
                         }));
 
-        view.getCloseButton()
+        ui.getCloseButton()
                 .setOnAction(
                         e -> stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
-        view.getResetButton().setOnAction(e -> model.reset());
+        ui.getResetButton().setOnAction(e -> model.reset());
 
-        view.getStatsButton()
+        ui.getStatsButton()
                 .setOnAction(
                         e -> {
                             Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -83,10 +82,10 @@ public final class PomodoroController {
                     }
                 });
         ContextMenu moreMenu = new ContextMenu(abortItem);
-        view.getMoreButton()
+        ui.getMoreButton()
                 .setOnAction(
-                        e -> moreMenu.show(view.getMoreButton(), javafx.geometry.Side.BOTTOM, 0, 0));
+                        e -> moreMenu.show(ui.getMoreButton(), javafx.geometry.Side.BOTTOM, 0, 0));
 
-        view.getMainActionButton().setOnAction(e -> model.toggleRunPause());
+        ui.getMainActionButton().setOnAction(e -> model.toggleRunPause());
     }
 }
