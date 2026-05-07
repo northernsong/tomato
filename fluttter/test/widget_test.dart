@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:fluttter/main.dart';
-import 'package:fluttter/pomodoro/pomodoro_controller.dart';
-import 'package:fluttter/pomodoro/pomodoro_state.dart';
-import 'package:fluttter/settings/settings_page.dart';
+import 'package:fluttter/app/tomato_app.dart';
+import 'package:fluttter/features/pomodoro/domain/pomodoro_controller.dart';
+import 'package:fluttter/features/pomodoro/domain/pomodoro_state.dart';
+import 'package:fluttter/features/settings/presentation/settings_page.dart';
 
 void main() {
   testWidgets('主界面展示番茄卡片与开始按钮', (WidgetTester tester) async {
