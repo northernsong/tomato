@@ -1,11 +1,2 @@
-# Gradle
-/build/
-/.gradle/
-
-# IntelliJ IDEA
-.idea/
-*.iml
-out/
-
-# OS
-.DS_Store
+/.claude/
+/.idea/
