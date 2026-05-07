@@ -38,8 +38,9 @@ class PomodoroController extends ChangeNotifier {
     return kDebugMode ? 30 : 25 * 60;
   }
 
+  /// 从 [PomodoroState.idle] 开始新一轮（剩余时间重置为总时长）。
   void start() {
-    if (_state == PomodoroState.running) return;
+    if (_state != PomodoroState.idle) return;
     _timer?.cancel();
     _remainingSeconds = _totalSeconds;
     _state = PomodoroState.running;
@@ -61,18 +62,37 @@ class PomodoroController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 用户确认放弃后调用：停止计时并进入 [PomodoroState.aborted]。
-  void abort() {
+  /// 运行中 → 暂停。
+  void pause() {
     if (_state != PomodoroState.running) return;
     _timer?.cancel();
     _timer = null;
-    _state = PomodoroState.aborted;
+    _state = PomodoroState.paused;
     notifyListeners();
   }
 
-  /// 在 [PomodoroState.ended] / [PomodoroState.aborted] 占位提示关闭后回到 idle。
+  /// 暂停 → 继续。
+  void resume() {
+    if (_state != PomodoroState.paused) return;
+    _state = PomodoroState.running;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    notifyListeners();
+  }
+
+  /// 刷新：运行中或暂停时立即停表，剩余时间恢复为满格并回到 [PomodoroState.idle]；闲置时幂等。
+  /// [PomodoroState.ended] 时不处理（等待用户确认结束对话框）。
+  void refresh() {
+    if (_state == PomodoroState.ended) return;
+    _timer?.cancel();
+    _timer = null;
+    _remainingSeconds = _totalSeconds;
+    _state = PomodoroState.idle;
+    notifyListeners();
+  }
+
+  /// 在 [PomodoroState.ended] 占位提示关闭后回到 idle。
   void acknowledgeAndReset() {
-    if (_state != PomodoroState.ended && _state != PomodoroState.aborted) {
+    if (_state != PomodoroState.ended) {
       return;
     }
     _state = PomodoroState.idle;
