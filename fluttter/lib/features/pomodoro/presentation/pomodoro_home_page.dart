@@ -1,6 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
 
+import '../../../app/theme/tomato_colors.dart';
+import '../../../windowing/desktop_window_resize_coordinator.dart';
+import '../../../windowing/settings_window_launcher.dart';
+import '../../../windowing/tomato_platform.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../domain/pomodoro_controller.dart';
 import '../domain/pomodoro_state.dart';
@@ -9,7 +17,7 @@ import 'widgets/pomodoro_timer_card.dart';
 /// 番茄钟主界面（单页 Scaffold）。
 ///
 /// 组合 [PomodoroController] 与 [PomodoroTimerCard]；处理「本轮结束」弹窗、
-/// [Navigator] 去设置页等需要稳定 [BuildContext] 的逻辑。
+/// 桌面端独立设置窗口与 [Navigator] 等需要稳定 [BuildContext] 的逻辑。
 class PomodoroHomePage extends StatefulWidget {
   const PomodoroHomePage({super.key});
 
@@ -19,6 +27,9 @@ class PomodoroHomePage extends StatefulWidget {
 
 class _PomodoroHomePageState extends State<PomodoroHomePage> {
   late final PomodoroController _controller;
+  final GlobalKey _frameKey = GlobalKey();
+
+  DesktopWindowResizeCoordinator? _resizeCoordinator;
 
   /// 避免在结束对话框仍打开时重复弹出或响应 controller 的多次 notify。
   bool _sessionEndedDialogOpen = false;
@@ -28,6 +39,9 @@ class _PomodoroHomePageState extends State<PomodoroHomePage> {
     super.initState();
     _controller = PomodoroController();
     _controller.addListener(_onControllerChanged);
+    if (tomatoIsDesktop) {
+      _resizeCoordinator = DesktopWindowResizeCoordinator();
+    }
   }
 
   void _onControllerChanged() {
@@ -65,7 +79,11 @@ class _PomodoroHomePageState extends State<PomodoroHomePage> {
   }
 
   void _closeWindow() {
-    SystemNavigator.pop();
+    if (tomatoIsDesktop) {
+      unawaited(windowManager.close());
+    } else {
+      SystemNavigator.pop();
+    }
   }
 
   void _showHistoryPlaceholder() {
@@ -82,15 +100,17 @@ class _PomodoroHomePageState extends State<PomodoroHomePage> {
   }
 
   void _openSettingsAfterMenuFrame() {
-    // PopupMenu 关闭与路由 push 同一帧时，用子组件 context 可能推不进去；
-    // 延后到下一帧并用本 State 持有的 context。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => const SettingsPage(),
-        ),
-      );
+      if (tomatoIsDesktop) {
+        unawaited(openSettingsWindowOrFocusExisting());
+      } else {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => const SettingsPage(),
+          ),
+        );
+      }
     });
   }
 
@@ -105,24 +125,73 @@ class _PomodoroHomePageState extends State<PomodoroHomePage> {
     );
   }
 
+  void _measureAndResizeWindow() {
+    if (!tomatoIsDesktop || _resizeCoordinator == null) return;
+    final box = _frameKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    unawaited(_resizeCoordinator!.requestSize(box.size));
+  }
+
+  EdgeInsets _desktopFramePadding() {
+    if (!tomatoIsDesktop) return EdgeInsets.zero;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.macOS:
+        return const EdgeInsets.fromLTRB(76, 0, 14, 16);
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+        return const EdgeInsets.fromLTRB(12, 0, 12, 16);
+      default:
+        return EdgeInsets.zero;
+    }
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
+    _resizeCoordinator?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndResizeWindow());
+
+    final framed = KeyedSubtree(
+      key: _frameKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (tomatoIsDesktop)
+            DragToMoveArea(
+              child: const SizedBox(
+                height: 28,
+                width: double.infinity,
+                child: ColoredBox(color: Colors.transparent),
+              ),
+            ),
+          Padding(
+            padding: _desktopFramePadding(),
+            child: Center(
+              child: PomodoroTimerCard(
+                controller: _controller,
+                onCloseWindow: _closeWindow,
+                onShowHistoryPlaceholder: _showHistoryPlaceholder,
+                onShowAbout: _showAboutDialog,
+                onRequestOpenSettings: _openSettingsAfterMenuFrame,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
-      body: Center(
-        child: PomodoroTimerCard(
-          controller: _controller,
-          onCloseWindow: _closeWindow,
-          onShowHistoryPlaceholder: _showHistoryPlaceholder,
-          onShowAbout: _showAboutDialog,
-          onRequestOpenSettings: _openSettingsAfterMenuFrame,
-        ),
+      backgroundColor: TomatoColors.scaffoldBackground,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: framed,
       ),
     );
   }

@@ -8,8 +8,12 @@ import 'widgets/labeled_text_field.dart';
 /// 应用设置界面：飞书固定字段 + 可扩展自定义键值对。
 ///
 /// 通过 [SettingsRepository] 与本地持久化交互；保存成功后用 [SnackBar] 轻提示。
+///
+/// [onRequestCloseWindow] 非空时（独立设置窗口）在 [AppBar] 显示关闭并调用之。
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.onRequestCloseWindow});
+
+  final Future<void> Function()? onRequestCloseWindow;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -142,6 +146,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        leading: widget.onRequestCloseWindow == null
+            ? null
+            : IconButton(
+                tooltip: '关闭',
+                icon: const Icon(Icons.close),
+                onPressed: () async => widget.onRequestCloseWindow?.call(),
+              ),
         title: const Text('设置'),
         actions: [
           TextButton(
