@@ -37,8 +37,6 @@ Future<void> main(List<String> args) async {
         titleBarStyle: TitleBarStyle.hidden,
       );
       windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.setAsFrameless();
-        await windowManager.setHasShadow(true);
         await windowManager.show();
         await windowManager.focus();
       });

@@ -136,8 +136,7 @@ class _PomodoroHomePageState extends State<PomodoroHomePage> {
     if (!tomatoIsDesktop) return EdgeInsets.zero;
     switch (defaultTargetPlatform) {
       case TargetPlatform.macOS:
-        // 无边框主窗无交通灯占位，对称留白即可。
-        return const EdgeInsets.fromLTRB(14, 0, 14, 16);
+        return const EdgeInsets.fromLTRB(76, 0, 14, 16);
       case TargetPlatform.windows:
       case TargetPlatform.linux:
         return const EdgeInsets.fromLTRB(12, 0, 12, 16);
